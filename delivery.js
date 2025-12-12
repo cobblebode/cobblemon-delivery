@@ -23,13 +23,14 @@ throw e;
 
 async function process() {
   try {
-const orders = await fetch(${SITE}/api/delivery/pending).then(r => r.json());
+const res = await fetch(SITE + '/api/delivery/pending');
+const orders = await res.json();
 
 for (const o of orders) {
-  console.log([${new Date().toISOString()}] Entregando #${o.id} para ${o.player_name});
+  console.log('[' + new Date().toISOString() + '] Entregando #' + o.id + ' para ' + o.player_name);
   await rcon(o.command);
-  await fetch(${SITE}/api/delivery/complete/${o.id}, { method: 'POST' });
-  console.log(Entregue!);
+  await fetch(SITE + '/api/delivery/complete/' + o.id, { method: 'POST' });
+  console.log('Entregue!');
 }
   } catch (e) {
 console.error('Erro:', e.message);
