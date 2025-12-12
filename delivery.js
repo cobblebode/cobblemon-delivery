@@ -1,42 +1,36 @@
-const { Rcon } = require('rcon-client');
+const Rcon = require('rcon-client').Rcon;
 require('dotenv').config();
 
-const SITE = 'https://cobblebode.mocha.app';
-const RCON = {
-  host: process.env.RCON_HOST,
-  port: parseInt(process.env.RCON_PORT),
-  password: process.env.RCON_PASSWORD
-};
-
-async function rcon(cmd) {
-  const r = new Rcon(RCON);
+async function deliver() {
   try {
-await r.connect();
-const res = await r.send(cmd);
-await r.end();
-return res;
-  } catch (e) {
-await r.end();
-throw e;
-  }
-}
+const response = await fetch('https://cobblebode.mocha.app/api/delivery/pending');
+const orders = await response.json();
 
-async function process() {
-  try {
-const res = await fetch(SITE + '/api/delivery/pending');
-const orders = await res.json();
+for (let i = 0; i < orders.length; i++) {
+  const order = orders[i];
+  console.log('Entregando pedido #' + order.id);
 
-for (const o of orders) {
-  console.log('[' + new Date().toISOString() + '] Entregando #' + o.id + ' para ' + o.player_name);
-  await rcon(o.command);
-  await fetch(SITE + '/api/delivery/complete/' + o.id, { method: 'POST' });
+  const rcon = new Rcon({
+    host: process.env.RCON_HOST,
+    port: Number(process.env.RCON_PORT),
+    password: process.env.RCON_PASSWORD
+  });
+
+  await rcon.connect();
+  await rcon.send(order.command);
+  await rcon.end();
+
+  await fetch('https://cobblebode.mocha.app/api/delivery/complete/' + order.id, {
+    method: 'POST'
+  });
+
   console.log('Entregue!');
 }
-  } catch (e) {
-console.error('Erro:', e.message);
+  } catch (error) {
+console.error('Erro:', error.message);
   }
 }
 
-setInterval(process, 30000);
 console.log('Sistema iniciado!');
-process();
+deliver();
+setInterval(deliver, 30000);
