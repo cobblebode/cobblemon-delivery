@@ -5,11 +5,30 @@ require('dotenv').config();
 async function deliver() {
   try {
 const response = await fetch('https://cobblebode.mocha.app/api/delivery/pending');
-const orders = await response.json();
+
+if (!response.ok) {
+  console.log('API retornou erro:', response.status);
+  return;
+}
+
+const text = await response.text();
+let orders;
+
+try {
+  orders = JSON.parse(text);
+} catch (e) {
+  console.log('Resposta nao é JSON valido:', text.substring(0, 100));
+  return;
+}
+
+if (!orders || orders.length === 0) {
+  console.log('Nenhum pedido pendente');
+  return;
+}
 
 for (let i = 0; i < orders.length; i++) {
   const order = orders[i];
-  console.log('Entregando pedido #' + order.id);
+  console.log('Entregando pedido #' + order.id + ' para ' + order.player_name);
 
   const rcon = new Rcon({
     host: process.env.RCON_HOST,
@@ -25,10 +44,10 @@ for (let i = 0; i < orders.length; i++) {
     method: 'POST'
   });
 
-  console.log('Entregue!');
+  console.log('Pedido #' + order.id + ' entregue!');
 }
   } catch (error) {
-console.error('Erro:', error.message);
+console.error('Erro geral:', error.message);
   }
 }
 
