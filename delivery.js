@@ -1,4 +1,5 @@
 const Rcon = require('rcon-client').Rcon;
+const http = require('http');
 require('dotenv').config();
 
 async function deliver() {
@@ -31,6 +32,14 @@ console.error('Erro:', error.message);
   }
 }
 
-console.log('Sistema iniciado!');
-deliver();
-setInterval(deliver, 30000);
+const server = http.createServer((req, res) => {
+  res.writeHead(200);
+  res.end('Sistema de entrega automatica rodando');
+});
+
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+  console.log('Sistema iniciado na porta ' + PORT);
+  deliver();
+  setInterval(deliver, 30000);
+});
